@@ -1,9 +1,10 @@
-import {loadModel} from './load-model.js';
+import {MeshoptDecoder} from './vendor/meshopt_decoder.module.js';
+import {loadModel,loadInfo} from './load-model.js?v=16';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createEnvironment,backgroundFov} from './environment.js';
+import {createEnvironment,backgroundFov} from './environment.js?v=16';
 import {finishStone} from './stone.js';
 import {createAtmosphere} from './atmosphere.js';
 import {createWater} from './water.js';
@@ -117,9 +118,10 @@ function optimizeModel(root){
   }
   return group;
 }
-const loader=new GLTFLoader();probe?.trackLoader(loader);
+const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+const modelUrl=MeshoptDecoder.supported?'./assets/scene-meshopt.glb':'./assets/scene.glb';probe?.trackLoader(loader);
 const perfRun=probe?new URLSearchParams(location.search).get('perfRun'):null;
-loadModel(loader,'./assets/scene.glb'+(perfRun?'?perfRun='+encodeURIComponent(perfRun):''),gltf=>{
+loadModel(loader,modelUrl+(perfRun?'?perfRun='+encodeURIComponent(perfRun):''),gltf=>{
   probe?.recordGeometry('decoded',gltf.scene);probe?.mark('mergeStart');
   const model=optimizeModel(gltf.scene);probe?.mark('mergeEnd');probe?.recordGeometry('merged',model);
   scene.add(model);atmosphere.attachChannels(model);
@@ -130,7 +132,9 @@ loadModel(loader,'./assets/scene.glb'+(perfRun?'?perfRun='+encodeURIComponent(pe
   viewport.dataset.ready='true';viewport.dataset.meshes=String(model.children.length);
   probe?.mark('ready');document.querySelector('#view-pause').disabled=false;document.querySelector('#view-reset').disabled=false;
 },event=>{
-  document.querySelector('#load-progress').textContent=event.total?`正在布置景观 · ${Math.round(event.loaded/event.total*100)}%`:'正在布置景观';
+  if(event.phase==='download')document.querySelector('#load-progress').textContent=event.total?`正在下载景观 · ${Math.min(100,Math.round(event.loaded/event.total*100))}%`:'正在下载景观';
+  if(event.phase==='prepare')document.querySelector('#load-progress').textContent='正在准备画面';
+  updateLoadInfo();
 },error=>{
   console.error(error);const loading=document.querySelector('#loading');loading.classList.add('failed');
   loading.querySelector('p').textContent='景观未能载入，请刷新重试';document.querySelector('#load-progress').textContent='请确认网络连接正常。';document.querySelector('#retry').hidden=false;
@@ -208,3 +212,47 @@ document.querySelector('#retry').onclick=()=>location.reload();
 document.addEventListener('pointerdown',e=>{if(!viewTools.contains(e.target))closeViewMenu();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!viewActions.hidden){closeViewMenu();viewMenu.focus();}});
 updateViewPause();
+
+function updateLoadInfo(){
+  const panel=document.querySelector('#load-info');if(panel.hidden)return;
+  const phase={download:'下载中',prepare:'准备画面',ready:'就绪',error:'加载失败'}[loadInfo.phase];
+  const size=bytes=>(bytes/1e6).toFixed(1)+' MB';
+  const duration=ms=>ms===null?(loadInfo.phase==='ready'?'无法分段计时':'尚未完成'):(ms/1000).toFixed(1)+' 秒';
+  panel.textContent=`版本 16 · ${phase}\n模型读取：${size(loadInfo.loaded)} / ${loadInfo.total?size(loadInfo.total):'大小未知'}\n下载／解压：${duration(loadInfo.downloadMs)}\n模型准备：${duration(loadInfo.prepareMs)}\n仅统计模型；读取可能来自缓存。`;
+}
+document.querySelector('#view-load-info').onclick=()=>{
+  const panel=document.querySelector('#load-info');panel.hidden=!panel.hidden;
+  document.querySelector('#view-load-info').setAttribute('aria-expanded',String(!panel.hidden));updateLoadInfo();
+};
+
+const viewFullscreen=document.querySelector('#view-fullscreen'),fullscreenStatus=document.querySelector('#fullscreen-status');
+function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement;}
+function showFullscreenHint(text){fullscreenStatus.textContent=text;fullscreenStatus.hidden=false;}
+function updateFullscreen(){
+  const active=!!fullscreenElement();viewFullscreen.textContent=active?'退出全屏':'全屏';
+  viewFullscreen.setAttribute('aria-label',active?'退出全屏':'全屏观看');
+  if(!active){fullscreenStatus.hidden=true;try{screen.orientation?.unlock?.();}catch{}}
+}
+viewFullscreen.onclick=async()=>{
+  fullscreenStatus.hidden=true;closeViewMenu();
+  if(fullscreenElement()){
+    try{await (document.exitFullscreen||document.webkitExitFullscreen).call(document);}
+    catch{showFullscreenHint('请使用浏览器的退出全屏操作。');}
+    return;
+  }
+  const enter=document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen;
+  if(!enter){showFullscreenHint('此浏览器不支持网页全屏。请横转手机观看，或在手机浏览器中打开。');return;}
+  try{
+    await enter.call(document.documentElement);viewport.focus();
+    if(innerHeight>innerWidth){
+      try{
+        if(!screen.orientation?.lock)throw new Error('Orientation lock unavailable');
+        await screen.orientation.lock('landscape');
+      }catch{showFullscreenHint('已进入全屏，请横转手机以获得更宽的画面。');}
+    }
+  }catch{showFullscreenHint('此浏览器未允许全屏。请横转手机观看，或在手机浏览器中打开。');}
+};
+document.addEventListener('fullscreenchange',updateFullscreen);
+document.addEventListener('webkitfullscreenchange',updateFullscreen);
+window.addEventListener('resize',()=>{if(innerWidth>innerHeight)fullscreenStatus.hidden=true;});
+updateFullscreen();

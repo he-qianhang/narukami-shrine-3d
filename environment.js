@@ -9,11 +9,11 @@ export function backgroundFov(zoom){
 export function createEnvironment(renderer){
   const scene=new THREE.Scene();
   const camera=new THREE.PerspectiveCamera(68,1,.1,300),screenCamera=new THREE.Camera();
-  const texture=new THREE.TextureLoader().load('./assets/inazuma-panorama11.png');
+  const texture=new THREE.TextureLoader().load('./assets/inazuma-panorama11.webp');
   texture.colorSpace=THREE.SRGBColorSpace;
-  const cloudCap=new THREE.TextureLoader().load('./assets/inazuma-cloud-cap14.png');
+  const cloudCap=new THREE.TextureLoader().load('./assets/inazuma-cloud-cap14.webp');
   cloudCap.colorSpace=THREE.SRGBColorSpace;
-  const seamBridge=new THREE.TextureLoader().load('./assets/inazuma-seam14.png');
+  const seamBridge=new THREE.TextureLoader().load('./assets/inazuma-seam14.webp');
   seamBridge.colorSpace=THREE.SRGBColorSpace;
   const uniforms={panorama:{value:texture},cloudCap:{value:cloudCap},seamBridge:{value:seamBridge},inverseProjection:{value:camera.projectionMatrixInverse},cameraWorld:{value:camera.matrixWorld}};
   const sky=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.ShaderMaterial({

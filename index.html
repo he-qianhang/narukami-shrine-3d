@@ -2,17 +2,17 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#b9aecb">
   <meta name="description" content="鸣神大社主题的三维微缩景观。拖拽旋转，滚轮缩放，静候片刻继续镜头巡游。">
   <title>鸣神大社 · 樱下巡游</title>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css?v=16">
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
   <link rel="icon" href="data:,">
 </head>
 <body>
   <main id="viewport" aria-label="鸣神大社三维景观，拖拽旋转，滚轮缩放；空格暂停或继续巡游，R 返回初始视角" tabindex="0"></main>
-  <div id="loading" role="status"><span class="seal">稻妻</span><p>风过神樱，片刻即至</p><small id="load-progress">正在布置景观</small><button id="retry" hidden>重新载入</button></div>
+  <div id="loading" role="status"><span class="seal">稻妻</span><p>风过神樱，片刻即至</p><small id="load-progress">正在连接景观资源</small><button id="retry" hidden>重新载入</button></div>
   <aside id="director" hidden aria-label="镜头编排">
     <header><small>NARUKAMI / CAMERA STUDY</small><h1>樱下巡游</h1><p>上下拖拽可俯视或仰视，左右拖拽旋转。<br>右键平移、滚轮缩放，找到角度后记录镜头。</p></header>
     <div class="actions"><button id="capture">＋ 记录当前视角</button><button id="play">预览路线</button></div>
@@ -21,15 +21,19 @@
     <footer><button id="export">导出路线</button><label class="button">导入路线<input id="import" type="file" accept="application/json,.json" hidden></label><button id="reset">恢复默认</button><a href="./index.html" target="_blank" rel="noopener">打开纯净展示页 ↗</a><p>路线自动保存在当前浏览器。每个时长表示从该镜头走到下一镜头的时间，最后一个镜头会回到第一个。</p></footer>
   </aside>
   <nav id="view-tools" aria-label="景观操作">
+    <button id="view-fullscreen" aria-label="全屏观看">全屏</button>
     <button id="view-menu" aria-expanded="false" aria-controls="view-actions">操作</button>
+    <p id="fullscreen-status" role="status" hidden></p>
     <div id="view-actions" hidden>
       <button id="view-pause" disabled>暂停巡游</button>
       <button id="view-reset" disabled>回到初始视角</button>
+      <button id="view-load-info" aria-expanded="false" aria-controls="load-info">加载信息</button>
+      <p id="load-info" hidden></p>
       <p>拖拽旋转 · 双指缩放<br>电脑可用空格暂停、R 复位</p>
       <small>鸣神大社同人场景 · 非官方展示</small>
     </div>
   </nav>
 
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=16"></script>
 </body>
 </html>
